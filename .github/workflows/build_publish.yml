@@ -1,0 +1,48 @@
+name: Build/Publish docker image
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_push_docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build the tagged Docker image
+        run: docker build -t ghcr.io/woog-life/potsdam-booking-scraper:${GITHUB_SHA} .
+      - name: Push the tagged Docker image
+        run: docker push ghcr.io/woog-life/potsdam-booking-scraper:${GITHUB_SHA}
+  deploy:
+    name: "Publish to k8s"
+    runs-on: ubuntu-latest
+    needs: build_push_docker
+    steps:
+      - uses: actions/checkout@v1
+      - name: update tag in manifest.yml
+        run: sed -i -e "s#{{TAG}}#$(echo ${GITHUB_SHA})#g" .kubernetes/manifest.yaml
+      - uses: danielr1996/kubectl-action@1.0.0
+        name: apply config
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          args: apply -f .kubernetes/manifest.yaml
+  alert:
+    name: "alert on failure"
+    runs-on: ubuntu-latest
+    needs: [ build_push_docker, deploy ]
+    if: failure()
+    steps:
+      - uses: appleboy/telegram-action@master
+        name: send failure alert
+        with:
+          format: markdown
+          to: ${{ secrets.CI_FAILURE_TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_CI_TOKEN_RAW }}
+          args: job failed in woog-life/potsdam-booking-scraper after push ([CI](https://github.com/woog-life/potsdam-booking-scraper/actions))

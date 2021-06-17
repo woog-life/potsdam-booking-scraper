@@ -1,0 +1,30 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: potsdam-booking-scraper
+  namespace: wooglife
+spec:
+  schedule: "*/30 * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          containers:
+          - name: scraper
+            image: ghcr.io/woog-life/potsdam-booking-scraper:{{TAG}}
+            envFrom:
+            - secretRef:
+                name: apikey
+            - secretRef:
+                name: telegram-token
+            - configMapRef:
+                name: lake-uuids
+            - configMapRef:
+                name: scraper-config
+            command:
+            - python
+            - main.py
+          restartPolicy: Never
