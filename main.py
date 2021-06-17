@@ -39,13 +39,13 @@ class EventDetails:
         return f"is_available={self.is_available} ({self.booking_link})"
 
     def json(self) -> Dict[str, Union[bool, str, int]]:
-        result: Dict[str, Union[bool, str, int]] = {}
-        for key, value in dataclasses.asdict(self).items():
-            if isinstance(value, datetime):
-                result[key] = f"{value.isoformat()}Z"
-            else:
-                result[key] = value
-        return result
+        return {
+            "bookingLink": self.booking_link,
+            "isAvailable": self.is_available,
+            "beginTime": f"{self.begin_time.isoformat()}Z",
+            "endTime": f"{self.end_time.isoformat()}Z",
+            "saleStartTime": f"{self.sale_start.isoformat()}Z",
+        }
 
 
 def _utc(input_time: datetime) -> datetime:
