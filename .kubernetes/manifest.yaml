@@ -22,8 +22,6 @@ spec:
                 name: telegram-token
             - configMapRef:
                 name: lake-uuids
-            - configMapRef:
-                name: scraper-config
             command:
             - python
             - main.py
