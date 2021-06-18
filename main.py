@@ -199,7 +199,7 @@ def main() -> Tuple[bool, str]:
     sale_start_time = _utc(today)
     details = []
 
-    for i in range(0):
+    for i in range(14):
         date = today + timedelta(days=i)
         content, success = get_website(date.strftime("%Y-%m-%d"))
         if not success:
